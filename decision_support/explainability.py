@@ -1,5 +1,6 @@
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import json
 
 class ExplainabilityEngine:
@@ -7,9 +8,9 @@ class ExplainabilityEngine:
         # We need an API key to run this. If it's not present, we will fallback to a mocked response.
         self.api_key = os.environ.get("GEMINI_API_KEY")
         if self.api_key:
-            genai.configure(api_key=self.api_key)
-            # Use gemini-1.5-flash for faster structured text tasks
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.client = genai.Client(api_key=self.api_key)
+            self.model_name = 'gemini-2.5-flash'
+            self.model = True # keep logic backward compatible
         else:
             self.model = None
 
@@ -47,9 +48,10 @@ REQUIRED OUTPUT FORMAT (JSON):
 }}
 """
         try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     temperature=0.1
                 )
@@ -81,9 +83,10 @@ DATA:
 Provide a closing recommendation line: which one fits better given their data, and why. Be honest if it's a coin-flip. DO NOT hallucinate any numbers or outside information. Keep it under 3 sentences.
 """
          try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(temperature=0.1)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.1)
             )
             return response.text
          except Exception as e:
