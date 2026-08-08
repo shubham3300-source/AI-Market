@@ -8,9 +8,9 @@ class ExplainabilityEngine:
         # We need an API key to run this. If it's not present, we will fallback to a mocked response.
         self.api_key = os.environ.get("GEMINI_API_KEY")
         if self.api_key:
-            self.client = genai.Client(api_key=self.api_key)
-            self.model_name = 'gemini-2.5-flash'
-            self.model = True # keep logic backward compatible
+            genai.configure(api_key=self.api_key)
+            # Use gemini-1.5-flash for faster structured text tasks
+            self.model = genai.GenerativeModel('gemini-3.5-flash-lite')
         else:
             self.model = None
 
