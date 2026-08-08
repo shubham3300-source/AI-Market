@@ -68,3 +68,11 @@ backtest:
 data:
   cache_dir: "data_layer/cache"
   history_years: 3
+
+user_profile:
+  risk_appetite: "Moderate" # Conservative, Moderate, Aggressive
+  horizon: "Swing" # Intraday, Swing, Positional, Long-term
+  account_size: 1000000
+  max_risk_per_trade_pct: 0.01 # 1% risk per trade
+  excluded_sectors: []
+  preferred_themes: []

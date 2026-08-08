@@ -46,7 +46,46 @@ class ScoringEngine:
             return pd.DataFrame()
             
         # Get weights for the current regime, fallback to range_bound if not found
-        regime_weights = self.config['regimes']['weights'].get(current_regime, self.config['regimes']['weights']['range_bound'])
+        import copy
+        base_weights = self.config['regimes']['weights'].get(current_regime, self.config['regimes']['weights']['range_bound'])
+        regime_weights = copy.deepcopy(base_weights)
+
+        # Apply user profile adjustments
+        profile = self.config.get('user_profile', {})
+        risk = profile.get('risk_appetite', 'Moderate')
+        horizon = profile.get('horizon', 'Swing')
+
+        # Adjust based on Risk Appetite
+        if risk == 'Conservative':
+            regime_weights['fundamental'] = min(0.7, regime_weights['fundamental'] * 1.5)
+            regime_weights['technical'] = regime_weights['technical'] * 0.7
+            regime_weights['sub_weights']['volatility'] = min(0.5, regime_weights['sub_weights']['volatility'] * 1.5) # Prefer low vol
+        elif risk == 'Aggressive':
+            regime_weights['technical'] = min(0.8, regime_weights['technical'] * 1.3)
+            regime_weights['fundamental'] = regime_weights['fundamental'] * 0.7
+            regime_weights['sub_weights']['momentum'] = min(0.6, regime_weights['sub_weights']['momentum'] * 1.5)
+
+        # Adjust based on Horizon
+        if horizon == 'Long-term':
+            regime_weights['fundamental'] = min(0.8, regime_weights['fundamental'] * 1.5)
+            regime_weights['sub_weights']['momentum'] = regime_weights['sub_weights']['momentum'] * 0.2
+            regime_weights['sub_weights']['trend'] = min(0.5, regime_weights['sub_weights']['trend'] * 1.2)
+        elif horizon == 'Intraday':
+            regime_weights['fundamental'] = 0.05
+            regime_weights['volume'] = min(0.4, regime_weights['volume'] * 1.5)
+            regime_weights['sub_weights']['momentum'] = min(0.7, regime_weights['sub_weights']['momentum'] * 1.5)
+
+        # Re-normalize main weights to sum to 1.0
+        total = regime_weights['technical'] + regime_weights['fundamental'] + regime_weights['volume']
+        regime_weights['technical'] /= total
+        regime_weights['fundamental'] /= total
+        regime_weights['volume'] /= total
+
+        # Re-normalize sub weights to sum to 1.0
+        sub_total = sum(regime_weights['sub_weights'].values())
+        for k in regime_weights['sub_weights']:
+            regime_weights['sub_weights'][k] /= sub_total
+
         
         # 1. Normalize all factors
         norm_df = self._normalize_factors(raw_factors_df)
@@ -125,4 +164,8 @@ class ScoringEngine:
         norm_df['passed_liquidity'] = raw_factors_df['passed_liquidity']
         norm_df['liquidity_reason'] = raw_factors_df['liquidity_reason']
 
-        return norm_df.sort_values(by='composite_score', ascending=False)
+        # Hard-exclude flagged stocks (failed liquidity or other flags)
+        # We drop them completely from the DataFrame to enforce the guardrail
+        valid_df = norm_df[norm_df['passed_liquidity'] == True].copy()
+
+        return valid_df.sort_values(by='composite_score', ascending=False)
