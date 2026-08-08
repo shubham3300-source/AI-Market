@@ -9,7 +9,7 @@ class ExplainabilityEngine:
         if self.api_key:
             genai.configure(api_key=self.api_key)
             # Use gemini-1.5-flash for faster structured text tasks
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-3.5-flash-lite')
         else:
             self.model = None
 
