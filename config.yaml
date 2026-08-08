@@ -1,0 +1,70 @@
+universe:
+  name: "NIFTY_500"
+  exclude_illiquid_below_turnover: 10000000  # 1 Crore daily turnover
+
+regimes:
+  definitions:
+    strong_bull: "Nifty > 50 DMA, Nifty > 200 DMA, ADX > 25, VIX < 20"
+    choppy_bull: "Nifty > 200 DMA, Nifty < 50 DMA, VIX < 25"
+    range_bound: "Nifty ADX < 20, VIX < 20"
+    correction: "Nifty < 50 DMA, Nifty > 200 DMA, VIX > 20"
+    bear: "Nifty < 200 DMA"
+
+  # Base weight matrix per regime
+  weights:
+    strong_bull:
+      technical: 0.60
+      fundamental: 0.20
+      volume: 0.20
+      sub_weights:
+        momentum: 0.40
+        trend: 0.40
+        mean_reversion: 0.10
+        volatility: 0.10
+    choppy_bull:
+      technical: 0.40
+      fundamental: 0.40
+      volume: 0.20
+      sub_weights:
+        momentum: 0.20
+        trend: 0.30
+        mean_reversion: 0.30
+        volatility: 0.20
+    range_bound:
+      technical: 0.50
+      fundamental: 0.30
+      volume: 0.20
+      sub_weights:
+        momentum: 0.10
+        trend: 0.10
+        mean_reversion: 0.60
+        volatility: 0.20
+    correction:
+      technical: 0.30
+      fundamental: 0.50
+      volume: 0.20
+      sub_weights:
+        momentum: 0.10
+        trend: 0.20
+        mean_reversion: 0.40
+        volatility: 0.30
+    bear:
+      technical: 0.20
+      fundamental: 0.60
+      volume: 0.20
+      sub_weights:
+        momentum: 0.05
+        trend: 0.15
+        mean_reversion: 0.50
+        volatility: 0.30
+
+backtest:
+  initial_capital: 1000000
+  max_allocation_per_stock: 0.05
+  transaction_costs_pct: 0.002  # 0.2% round trip
+  slippage_pct: 0.001
+  stop_loss_pct: 0.10
+
+data:
+  cache_dir: "data_layer/cache"
+  history_years: 3
